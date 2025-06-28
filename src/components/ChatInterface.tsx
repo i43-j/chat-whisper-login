@@ -4,7 +4,6 @@ import { Input } from '@/components/ui/input';
 import { Send, Sun, Moon, LogOut } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
-// Configuration - webhook URL from environment variables
 const CHAT_WEBHOOK_URL = 'https://chat-whisper-login.vercel.app/api/chat';
 
 interface Message {
@@ -41,6 +40,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  /* theming + scroll */
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDark);
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
@@ -50,29 +50,25 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const toggleTheme = () => {
-    setIsDark(!isDark);
-  };
-
-  const handleSuggestionClick = (suggestion: string) => {
-    setInputValue(suggestion);
+  /* helpers */
+  const toggleTheme = () => setIsDark(!isDark);
+  const handleSuggestionClick = (s: string) => {
+    setInputValue(s);
     inputRef.current?.focus();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Prevent blank or double submits
     if (!inputValue.trim() || isLoading) return;
 
-    const userMessage: Message = {
+    /* add user bubble */
+    const userMsg: Message = {
       id: Date.now().toString(),
       text: inputValue.trim(),
       isUser: true,
       timestamp: new Date(),
     };
-
-    setMessages(prev => [...prev, userMessage]);
+    setMessages(prev => [...prev, userMsg]);
     setInputValue('');
     setIsLoading(true);
 
@@ -81,9 +77,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('chatSessionToken')}`,
+          Authorization: `Bearer ${localStorage.getItem('chatSessionToken')}`,
         },
-        body: JSON.stringify({ message: userMessage.text }),
+        body: JSON.stringify({ message: userMsg.text }),
       });
 
       if (res.status === 401) {
@@ -91,40 +87,42 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
         return;
       }
 
-      let botResponse = `I'm a demo chatbot! I received your message: ${userMessage.text}`;
+      let botText = `I'm a demo chatbot! I received your message: ${userMsg.text}`;
 
       if (res.ok) {
         const data = await res.json();
-        // data.response should be a string
-        if (typeof data.response === 'string') {
-          botResponse = data.response;
-        }
+
+        /* 1️⃣ prefer flattened shape   { response: "text" } */
+        if (typeof data.response === 'string') botText = data.response;
+        /* 2️⃣ fallback to older nested { response:{body:{message:"text"}} } */
+        else if (data.response?.body?.message) botText = data.response.body.message;
+      } else {
+        console.error('Chat API returned', res.status);
       }
 
-      const botMessage: Message = {
+      const botMsg: Message = {
         id: (Date.now() + 1).toString(),
-        text: botResponse,
+        text: botText,
         isUser: false,
         timestamp: new Date(),
       };
 
-      // simulate typing
       setTimeout(() => {
-        setMessages(prev => [...prev, botMessage]);
+        setMessages(prev => [...prev, botMsg]);
         setIsLoading(false);
-      }, 500);
-
-    } catch (error) {
-      console.error('Chat error:', error);
+      }, 400);
+    } catch (err) {
+      console.error('Chat error:', err);
       setIsLoading(false);
-
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: "Sorry, I'm having trouble connecting right now. Please try again.",
-        isUser: false,
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages(prev => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          text: "Sorry, I'm having trouble connecting right now. Please try again.",
+          isUser: false,
+          timestamp: new Date(),
+        },
+      ]);
     }
   };
 
@@ -135,36 +133,28 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
     }
   };
 
+  /* ---- JSX ---- */
   return (
     <div className="min-h-screen chat-bg flex flex-col">
+      {/* header */}
       <header className="flex-shrink-0 p-4 border-b">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <div className="w-8" />
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleTheme}
-              className="rounded-full"
-              aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-            >
+            <Button variant="ghost" size="sm" onClick={toggleTheme} className="rounded-full">
               {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onLogout}
-              className="rounded-full"
-              aria-label="Logout"
-            >
+            <Button variant="ghost" size="sm" onClick={onLogout} className="rounded-full">
               <LogOut className="h-4 w-4" />
             </Button>
           </div>
         </div>
       </header>
 
+      {/* main */}
       <main className="flex-1 flex flex-col max-w-4xl mx-auto w-full">
         {messages.length === 0 ? (
+          /* welcome */
           <div className="flex-1 flex flex-col items-center justify-center p-8 animate-fade-in">
             <div className="text-center mb-8">
               <h1 className="text-4xl font-bold mb-4">Hello there!</h1>
@@ -184,13 +174,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
             </div>
           </div>
         ) : (
+          /* chat bubbles */
           <div className="flex-1 overflow-y-auto p-4">
             <div className="space-y-4">
               {messages.map(msg => (
-                <div
-                  key={msg.id}
-                  className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'} animate-slide-up`}
-                >
+                <div key={msg.id} className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'} animate-slide-up`}>
                   <div
                     className={`max-w-[80%] md:max-w-[70%] p-4 rounded-2xl shadow-sm ${
                       msg.isUser ? 'user-bubble rounded-br-sm' : 'bot-bubble rounded-bl-sm'
@@ -221,6 +209,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
           </div>
         )}
 
+        {/* input */}
         <div className="flex-shrink-0 p-4 border-t">
           <form onSubmit={handleSubmit} className="flex items-end gap-3">
             <div className="flex-1">
