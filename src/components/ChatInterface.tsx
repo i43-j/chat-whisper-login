@@ -19,10 +19,10 @@ interface ChatInterfaceProps {
 }
 
 const suggestions = [
-  "What are the advantages of using Next.js?",
-  "Write code to demonstrate dijkstra's algorithm",
-  "Help me write an essay about silicon valley",
-  "What is the weather in San Francisco?"
+  "What is the company’s attendance policy?",
+  "How do I request time off or leave?",
+  "What is the process for reporting sick leave?",
+  "What is in the company code of conduct?"
 ];
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
