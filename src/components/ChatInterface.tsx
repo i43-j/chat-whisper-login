@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Send, Sun, Moon, LogOut } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
-// Configuration - webhook URLs from environment variables
+// Configuration - webhook URL from environment variables
 const CHAT_WEBHOOK_URL = 'https://chat-whisper-login.vercel.app/api/chat';
 
 interface Message {
@@ -30,7 +30,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isDark, setIsDark] = useState(() => {
-    // Auto-detect system color scheme
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('theme');
       if (stored) return stored === 'dark';
@@ -43,13 +42,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Apply theme
     document.documentElement.classList.toggle('dark', isDark);
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
   }, [isDark]);
 
   useEffect(() => {
-    // Scroll to bottom when new messages are added
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
@@ -64,7 +61,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    // Prevent blank or double submits
     if (!inputValue.trim() || isLoading) return;
 
     const userMessage: Message = {
@@ -79,7 +77,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
     setIsLoading(true);
 
     try {
-      const response = await fetch(CHAT_WEBHOOK_URL, {
+      const res = await fetch(CHAT_WEBHOOK_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -88,17 +86,19 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
         body: JSON.stringify({ message: userMessage.text }),
       });
 
-      if (response.status === 401) {
-        // Session expired - auto logout
+      if (res.status === 401) {
         onLogout();
         return;
       }
 
-      let botResponse = "I'm a demo chatbot! I received your message: " + userMessage.text;
-      
-      if (response.ok) {
-        const data = await response.json();
-        botResponse = data.response?.body?.message || botResponse;
+      let botResponse = `I'm a demo chatbot! I received your message: ${userMessage.text}`;
+
+      if (res.ok) {
+        const data = await res.json();
+        // data.response should be a string
+        if (typeof data.response === 'string') {
+          botResponse = data.response;
+        }
       }
 
       const botMessage: Message = {
@@ -108,7 +108,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
         timestamp: new Date(),
       };
 
-      // Simulate typing delay
+      // simulate typing
       setTimeout(() => {
         setMessages(prev => [...prev, botMessage]);
         setIsLoading(false);
@@ -117,8 +117,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
     } catch (error) {
       console.error('Chat error:', error);
       setIsLoading(false);
-      
-      // Show error message
+
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         text: "Sorry, I'm having trouble connecting right now. Please try again.",
@@ -138,10 +137,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
 
   return (
     <div className="min-h-screen chat-bg flex flex-col">
-      {/* Header */}
       <header className="flex-shrink-0 p-4 border-b">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
-          <div className="w-8" /> {/* Spacer */}
+          <div className="w-8" />
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
@@ -165,52 +163,45 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
         </div>
       </header>
 
-      {/* Main Chat Area */}
       <main className="flex-1 flex flex-col max-w-4xl mx-auto w-full">
         {messages.length === 0 ? (
-          /* Welcome Screen */
           <div className="flex-1 flex flex-col items-center justify-center p-8 animate-fade-in">
             <div className="text-center mb-8">
               <h1 className="text-4xl font-bold mb-4">Hello there!</h1>
               <p className="text-xl text-muted-foreground">How can I help you today?</p>
             </div>
-            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-2xl mb-8">
-              {suggestions.map((suggestion, index) => (
+              {suggestions.map((s, i) => (
                 <button
-                  key={index}
-                  onClick={() => handleSuggestionClick(suggestion)}
+                  key={i}
+                  onClick={() => handleSuggestionClick(s)}
                   className="p-4 text-left rounded-xl chat-surface border hover:border-primary/50 transition-all duration-200 hover:scale-[1.02] animate-slide-up"
-                  style={{ animationDelay: `${index * 100}ms` }}
+                  style={{ animationDelay: `${i * 100}ms` }}
                 >
-                  <span className="text-sm">{suggestion}</span>
+                  <span className="text-sm">{s}</span>
                 </button>
               ))}
             </div>
           </div>
         ) : (
-          /* Chat Messages */
           <div className="flex-1 overflow-y-auto p-4">
             <div className="space-y-4">
-              {messages.map((message) => (
+              {messages.map(msg => (
                 <div
-                  key={message.id}
-                  className={`flex ${message.isUser ? 'justify-end' : 'justify-start'} animate-slide-up`}
+                  key={msg.id}
+                  className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'} animate-slide-up`}
                 >
                   <div
                     className={`max-w-[80%] md:max-w-[70%] p-4 rounded-2xl shadow-sm ${
-                      message.isUser
-                        ? 'user-bubble rounded-br-sm'
-                        : 'bot-bubble rounded-bl-sm'
+                      msg.isUser ? 'user-bubble rounded-br-sm' : 'bot-bubble rounded-bl-sm'
                     }`}
                   >
                     <div className="text-sm leading-relaxed prose prose-sm max-w-none">
-                      <ReactMarkdown>{message.text}</ReactMarkdown>
+                      <ReactMarkdown>{msg.text}</ReactMarkdown>
                     </div>
                   </div>
                 </div>
               ))}
-              
               {isLoading && (
                 <div className="flex justify-start animate-fade-in">
                   <div className="bot-bubble p-4 rounded-2xl rounded-bl-sm">
@@ -225,28 +216,24 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
                   </div>
                 </div>
               )}
-              
               <div ref={messagesEndRef} />
             </div>
           </div>
         )}
 
-        {/* Input Area */}
         <div className="flex-shrink-0 p-4 border-t">
           <form onSubmit={handleSubmit} className="flex items-end gap-3">
-            
             <div className="flex-1">
               <Input
                 ref={inputRef}
                 value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
+                onChange={e => setInputValue(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Send a message…"
                 className="resize-none rounded-2xl"
                 disabled={isLoading}
               />
             </div>
-            
             <Button
               type="submit"
               size="sm"
