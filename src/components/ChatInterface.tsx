@@ -25,6 +25,7 @@ const suggestions = [
 ];
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
+  /* ───────────────────────── state ───────────────────────── */
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -40,7 +41,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  /* theming + scroll */
+  /* ───────────────────── effects / helpers ────────────────── */
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDark);
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
@@ -50,18 +51,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  /* helpers */
   const toggleTheme = () => setIsDark(!isDark);
   const handleSuggestionClick = (s: string) => {
     setInputValue(s);
     inputRef.current?.focus();
   };
 
+  /* ──────────────────────── submit ────────────────────────── */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputValue.trim() || isLoading) return;
 
-    /* add user bubble */
+    // push user bubble
     const userMsg: Message = {
       id: Date.now().toString(),
       text: inputValue.trim(),
@@ -91,13 +92,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
 
       if (res.ok) {
         const data = await res.json();
-
-        /* 1️⃣ prefer flattened shape   { response: "text" } */
-        if (typeof data.response === 'string') botText = data.response;
-        /* 2️⃣ fallback to older nested { response:{body:{message:"text"}} } */
-        else if (data.response?.body?.message) botText = data.response.body.message;
-      } else {
-        console.error('Chat API returned', res.status);
+        if (typeof data.response === 'string') {
+          botText = data.response;
+        }
       }
 
       const botMsg: Message = {
@@ -133,7 +130,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
     }
   };
 
-  /* ---- JSX ---- */
+  /* ───────────────────────── JSX ──────────────────────────── */
   return (
     <div className="min-h-screen chat-bg flex flex-col">
       {/* header */}
