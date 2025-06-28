@@ -76,30 +76,67 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onLoginSuccess }
         body: JSON.stringify({ username, password }),
       });
 
+      console.log('=== RESPONSE DEBUG ===');
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+      console.log('Response headers:', [...response.headers.entries()]);
+      
+      // Get the raw response text
+      const responseText = await response.text();
+      console.log('Raw response text:', responseText);
+      console.log('Response length:', responseText.length);
+      
       if (response.status === 200) {
-        const data = await response.json();
-        const token = data.body.token;
-        alert('Response: ' + JSON.stringify(data, null, 2));
-        console.log('Response data:', data); // This will show you exactly what you're getting
-        console.log('Data type:', typeof data);
-        console.log('Data keys:', Object.keys(data));
-        
-        // Store session
-        localStorage.setItem('chatSessionToken', token);
-        onLoginSuccess(token);
+        // Try to parse the JSON
+        try {
+          const data = JSON.parse(responseText);
+          console.log('Parsed data:', data);
+          console.log('Data structure:', Object.keys(data));
+          
+          // Check different possible token locations
+          console.log('data.token:', data.token);
+          console.log('data.body:', data.body);
+          console.log('data.body?.token:', data.body?.token);
+          
+          // Try to extract token based on n8n response structure
+          let token;
+          if (data.body && data.body.token) {
+            token = data.body.token;
+            console.log('Token found in data.body.token:', token);
+          } else if (data.token) {
+            token = data.token;
+            console.log('Token found in data.token:', token);
+          } else {
+            console.error('No token found in response!');
+            console.log('Full response structure:', JSON.stringify(data, null, 2));
+          }
+          
+          if (token) {
+            localStorage.setItem('chatSessionToken', token);
+            onLoginSuccess(token);
+            console.log('Login successful! Token stored.');
+          } else {
+            setError('No token received from server');
+          }
+          
+        } catch (parseError) {
+          console.error('JSON parse error:', parseError);
+          console.log('Response was not valid JSON:', responseText);
+          setError('Invalid response from server');
+        }
       } else if (response.status === 401) {
         // Login failed - trigger shake animation and show error
         setError('Invalid username or password');
         setShouldShake(true);
         setTimeout(() => setShouldShake(false), 500);
       } else {
-        // Other error status codes
-        setError('Login failed. Please try again.');
+        console.log('Non-200 status received:', response.status);
+        setError(`Server error: ${response.status}`);
         setShouldShake(true);
         setTimeout(() => setShouldShake(false), 500);
       }
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('Network error:', error);
       setError('Unable to connect to login service. Please try again.');
       setShouldShake(true);
       setTimeout(() => setShouldShake(false), 500);
