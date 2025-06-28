@@ -1,11 +1,10 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-// Configuration - easily changeable webhook URLs
-const LOGIN_WEBHOOK_URL = 'https://api.example.com/login';
+// Configuration - webhook URL from environment variables
+const LOGIN_WEBHOOK_URL = import.meta.env.VITE_LOGIN_WEBHOOK_URL || 'https://api.example.com/login';
 
 interface LoginModalProps {
   isOpen: boolean;

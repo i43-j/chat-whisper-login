@@ -4,8 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Send, Sun, Moon, LogOut } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
-// Configuration - easily changeable webhook URL
-const CHAT_WEBHOOK_URL = 'https://api.example.com/chat';
+// Configuration - webhook URLs from environment variables
+const CHAT_WEBHOOK_URL = import.meta.env.VITE_CHAT_WEBHOOK_URL || 'https://api.example.com/chat';
 
 interface Message {
   id: string;
