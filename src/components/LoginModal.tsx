@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 // Configuration - webhook URL from environment variables
-const LOGIN_WEBHOOK_URL = 'https://i43-j.app.n8n.cloud/webhook-test/chat/login/1';
+const LOGIN_WEBHOOK_URL = 'https://chat-whisper-login.vercel.app/api/chat-login';
 
 interface LoginModalProps {
   isOpen: boolean;
