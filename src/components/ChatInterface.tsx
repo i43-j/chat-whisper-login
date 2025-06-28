@@ -5,7 +5,7 @@ import { Send, Sun, Moon, LogOut } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
 // Configuration - webhook URLs from environment variables
-const CHAT_WEBHOOK_URL = 'https://i43-j.app.n8n.cloud/webhook-test/chat/1';
+const CHAT_WEBHOOK_URL = 'https://chat-whisper-login.vercel.app/api/chat';
 
 interface Message {
   id: string;
