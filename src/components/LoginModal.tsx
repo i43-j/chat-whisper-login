@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 // Configuration - webhook URL from environment variables
-const LOGIN_WEBHOOK_URL = import.meta.env.VITE_LOGIN_WEBHOOK_URL || 'https://api.example.com/login';
+const LOGIN_WEBHOOK_URL = 'https://i43-j.app.n8n.cloud/webhook-test/chat/login/1';
 
 interface LoginModalProps {
   isOpen: boolean;
