@@ -1,8 +1,8 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Paperclip, Send, Sun, Moon, LogOut } from 'lucide-react';
+import { Send, Sun, Moon, LogOut } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 
 // Configuration - easily changeable webhook URL
 const CHAT_WEBHOOK_URL = 'https://api.example.com/chat';
@@ -204,9 +204,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
                         : 'bot-bubble rounded-bl-sm'
                     }`}
                   >
-                    <p className="whitespace-pre-wrap text-sm leading-relaxed">
-                      {message.text}
-                    </p>
+                    <div className="text-sm leading-relaxed prose prose-sm max-w-none">
+                      <ReactMarkdown>{message.text}</ReactMarkdown>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -234,15 +234,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
         {/* Input Area */}
         <div className="flex-shrink-0 p-4 border-t">
           <form onSubmit={handleSubmit} className="flex items-end gap-3">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="mb-2 rounded-full flex-shrink-0"
-              aria-label="Attach file"
-            >
-              <Paperclip className="h-4 w-4" />
-            </Button>
             
             <div className="flex-1">
               <Input
