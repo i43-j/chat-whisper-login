@@ -98,7 +98,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
       
       if (response.ok) {
         const data = await response.json();
-        botResponse = data.response || botResponse;
+        botResponse = data.response?.body?.response || botResponse;
       }
 
       const botMessage: Message = {
