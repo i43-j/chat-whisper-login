@@ -76,27 +76,29 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onLoginSuccess }
         body: JSON.stringify({ username, password }),
       });
 
-      if (response.ok) {
+      if (response.status === 200) {
         const data = await response.json();
         const token = data.token || 'authenticated';
         
         // Store session
         localStorage.setItem('chatSessionToken', token);
         onLoginSuccess(token);
-      } else {
+      } else if (response.status === 401) {
         // Login failed - trigger shake animation and show error
         setError('Invalid username or password');
+        setShouldShake(true);
+        setTimeout(() => setShouldShake(false), 500);
+      } else {
+        // Other error status codes
+        setError('Login failed. Please try again.');
         setShouldShake(true);
         setTimeout(() => setShouldShake(false), 500);
       }
     } catch (error) {
       console.error('Login error:', error);
-      // For demo purposes, we'll allow any login to succeed after a delay
-      setTimeout(() => {
-        const token = 'demo-token';
-        localStorage.setItem('chatSessionToken', token);
-        onLoginSuccess(token);
-      }, 1000);
+      setError('Unable to connect to login service. Please try again.');
+      setShouldShake(true);
+      setTimeout(() => setShouldShake(false), 500);
     } finally {
       setIsLoading(false);
     }
