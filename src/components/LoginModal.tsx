@@ -78,7 +78,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onLoginSuccess }
 
       if (response.status === 200) {
         const data = await response.json();
-        const token = full.response.body.token || 'authenticated';
+        const token = data.body.token;
         
         // Store session
         localStorage.setItem('chatSessionToken', token);
