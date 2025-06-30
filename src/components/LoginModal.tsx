@@ -68,6 +68,10 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onLoginSuccess }
     setError('');
 
     try {
+      console.log('=== LOGIN REQUEST DEBUG ===');
+      console.log('Login URL:', LOGIN_WEBHOOK_URL);
+      console.log('Username:', username);
+      
       const response = await fetch(LOGIN_WEBHOOK_URL, {
         method: 'POST',
         headers: {
@@ -76,39 +80,34 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onLoginSuccess }
         body: JSON.stringify({ username, password }),
       });
 
-      console.log('=== RESPONSE DEBUG ===');
       console.log('Response status:', response.status);
       console.log('Response ok:', response.ok);
-      console.log('Response headers:', [...response.headers.entries()]);
       
-      // Get the raw response text
       const responseText = await response.text();
       console.log('Raw response text:', responseText);
       console.log('Response length:', responseText.length);
       
       if (response.status === 200) {
-        // Try to parse the JSON
         try {
           const data = JSON.parse(responseText);
-          console.log('Parsed data:', data);
+          console.log('Parsed login data:', data);
           console.log('Data structure:', Object.keys(data));
           
-          // Check different possible token locations
-          console.log('data.token:', data.token);
-          console.log('data.body:', data.body);
-          console.log('data.body?.token:', data.body?.token);
+          // Handle n8n response format - check multiple possible token locations
+          let token = null;
           
-          // Try to extract token based on n8n response structure
-          let token;
-          if (data.body && data.body.token) {
-            token = data.body.token;
-            console.log('Token found in data.body.token:', token);
-          } else if (data.token) {
+          if (data.token) {
             token = data.token;
             console.log('Token found in data.token:', token);
-          } else {
-            console.error('No token found in response!');
-            console.log('Full response structure:', JSON.stringify(data, null, 2));
+          } else if (data.body?.token) {
+            token = data.body.token;
+            console.log('Token found in data.body.token:', token);
+          } else if (data.response) {
+            token = data.response;
+            console.log('Token found in data.response:', token);
+          } else if (data.body?.response) {
+            token = data.body.response;
+            console.log('Token found in data.body.response:', token);
           }
           
           if (token) {
@@ -116,28 +115,34 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onLoginSuccess }
             onLoginSuccess(token);
             console.log('Login successful! Token stored.');
           } else {
-            setError('No token received from server');
+            console.error('No token found in response!');
+            console.log('Full response structure:', JSON.stringify(data, null, 2));
+            setError('No authentication token received from server');
+            setShouldShake(true);
+            setTimeout(() => setShouldShake(false), 500);
           }
           
         } catch (parseError) {
           console.error('JSON parse error:', parseError);
           console.log('Response was not valid JSON:', responseText);
-          setError('Invalid response from server');
+          setError('Invalid response format from server');
+          setShouldShake(true);
+          setTimeout(() => setShouldShake(false), 500);
         }
       } else if (response.status === 401) {
-        // Login failed - trigger shake animation and show error
+        console.log('Login failed - 401 Unauthorized');
         setError('Invalid username or password');
         setShouldShake(true);
         setTimeout(() => setShouldShake(false), 500);
       } else {
-        console.log('Non-200 status received:', response.status);
-        setError(`Server error: ${response.status}`);
+        console.log('Unexpected status code:', response.status);
+        setError(`Server returned status: ${response.status}`);
         setShouldShake(true);
         setTimeout(() => setShouldShake(false), 500);
       }
     } catch (error) {
-      console.error('Network error:', error);
-      setError('Unable to connect to login service. Please try again.');
+      console.error('Network/request error:', error);
+      setError(`Connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setShouldShake(true);
       setTimeout(() => setShouldShake(false), 500);
     } finally {

@@ -18,7 +18,7 @@ interface ChatInterfaceProps {
 }
 
 const suggestions = [
-  "What is the company’s attendance policy?",
+  "What is the company's attendance policy?",
   "How do I request time off or leave?",
   "What is the process for reporting sick leave?",
   "What is in the company code of conduct?"
@@ -74,6 +74,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
     setIsLoading(true);
 
     try {
+      console.log('=== CHAT REQUEST DEBUG ===');
+      console.log('Sending message:', userMsg.text);
+      console.log('Webhook URL:', CHAT_WEBHOOK_URL);
+      
       const res = await fetch(CHAT_WEBHOOK_URL, {
         method: 'POST',
         headers: {
@@ -83,18 +87,49 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
         body: JSON.stringify({ message: userMsg.text }),
       });
 
+      console.log('Response status:', res.status);
+      console.log('Response ok:', res.ok);
+
       if (res.status === 401) {
+        console.log('Unauthorized - logging out');
         onLogout();
         return;
       }
 
-      let botText = `I'm a demo chatbot! I received your message: ${userMsg.text}`;
+      // Get raw response text for debugging
+      const responseText = await res.text();
+      console.log('Raw response text:', responseText);
+
+      let botText = '';
 
       if (res.ok) {
-        const data = await res.json();
-        if (typeof data.response === 'string') {
-          botText = data.response;
+        try {
+          const data = JSON.parse(responseText);
+          console.log('Parsed response data:', data);
+          console.log('Data structure:', Object.keys(data));
+
+          // Handle n8n response format - check multiple possible locations
+          if (data.response) {
+            botText = data.response;
+            console.log('Found response in data.response:', botText);
+          } else if (data.body?.response) {
+            botText = data.body.response;
+            console.log('Found response in data.body.response:', botText);
+          } else if (data.body?.message) {
+            botText = data.body.message;
+            console.log('Found response in data.body.message:', botText);
+          } else {
+            console.error('No response found in expected locations');
+            console.log('Full response structure:', JSON.stringify(data, null, 2));
+            botText = 'No response received from server';
+          }
+        } catch (parseError) {
+          console.error('JSON parse error:', parseError);
+          botText = 'Invalid response format from server';
         }
+      } else {
+        console.error('Non-200 response:', res.status);
+        botText = `Server error: ${res.status}`;
       }
 
       const botMsg: Message = {
@@ -109,13 +144,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
         setIsLoading(false);
       }, 400);
     } catch (err) {
-      console.error('Chat error:', err);
+      console.error('Chat request error:', err);
       setIsLoading(false);
       setMessages(prev => [
         ...prev,
         {
           id: (Date.now() + 1).toString(),
-          text: "Sorry, I'm having trouble connecting right now. Please try again.",
+          text: `Connection error: ${err instanceof Error ? err.message : 'Unknown error'}`,
           isUser: false,
           timestamp: new Date(),
         },
