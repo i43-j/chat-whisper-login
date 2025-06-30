@@ -1,7 +1,7 @@
 
 // api/chat.js
 
-const N8N_CHAT_WEBHOOK = 'https://i43-j.app.n8n.cloud/webhook-test/chat/1';
+const N8N_CHAT_WEBHOOK = 'https://i43-j.app.n8n.cloud/webhook/chat';
 
 export default async function handler(req, res) {
   // 1) CORS headers
