@@ -167,7 +167,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
 
   /* ───────────────────────── JSX ──────────────────────────── */
   return (
-    <div className="min-h-screen chat-bg flex flex-col">
+    <div className="h-screen chat-bg flex flex-col overflow-hidden">
       {/* header */}
       <header className="flex-shrink-0 p-4 border-b">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
@@ -184,7 +184,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
       </header>
 
       {/* main */}
-      <main className="flex-1 flex flex-col max-w-4xl mx-auto w-full">
+      <main className="flex-1 flex flex-col max-w-4xl mx-auto w-full min-h-0">
         {messages.length === 0 ? (
           /* welcome */
           <div className="flex-1 flex flex-col items-center justify-center p-8 animate-fade-in">
@@ -207,8 +207,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
           </div>
         ) : (
           /* chat bubbles */
-          <div className="flex-1 overflow-y-auto p-4">
-            <div className="space-y-4">
+          <div className="flex-1 overflow-y-auto p-4 pb-0">
+            <div className="space-y-4 pb-4">
               {messages.map(msg => (
                 <div key={msg.id} className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'} animate-slide-up`}>
                   <div
@@ -217,58 +217,56 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
                     }`}
                   >
                    
-<div className="markdown-content text-sm">
-  <ReactMarkdown 
-    remarkPlugins={[]}
-    rehypePlugins={[]}
-    skipHtml={false}
-    components={{
-      code: ({node, inline, className, children, ...props}) => {
-        const match = /language-(\w+)/.exec(className || '');
-        
-        if (!inline && match) {
-          return (
-            <pre className="bg-muted border rounded-lg p-4 overflow-x-auto mb-4">
-              <code className={className} {...props}>
-                {children}
-              </code>
-            </pre>
-          );
-        }
-        
-        if (inline) {
-          return (
-            <code className="bg-muted px-1 py-0.5 rounded text-sm font-mono" {...props}>
-              {children}
-            </code>
-          );
-        }
-        
-        return <span {...props}>{children}</span>;
-      },
-      
-      a: ({node, children, href, ...props}) => (
-        <a 
-          href={href}
-          className="text-blue-500 hover:text-blue-600 hover:underline cursor-pointer"
-          target="_blank" 
-          rel="noopener noreferrer" 
-          {...props}
-        >
-          {children}
-        </a>
-      ),
-      
-      p: ({node, children, ...props}) => (
-        <p className="mb-4 leading-relaxed" {...props}>{children}</p>
-      )
-    }}
-  >
-    {msg.text}
-  </ReactMarkdown>
-</div>
-
-
+                    <div className="markdown-content text-sm">
+                      <ReactMarkdown 
+                        remarkPlugins={[]}
+                        rehypePlugins={[]}
+                        skipHtml={false}
+                        components={{
+                          code: ({node, inline, className, children, ...props}) => {
+                            const match = /language-(\w+)/.exec(className || '');
+                            
+                            if (!inline && match) {
+                              return (
+                                <pre className="bg-muted border rounded-lg p-4 overflow-x-auto mb-4 last:mb-0">
+                                  <code className={className} {...props}>
+                                    {children}
+                                  </code>
+                                </pre>
+                              );
+                            }
+                            
+                            if (inline) {
+                              return (
+                                <code className="bg-muted px-1 py-0.5 rounded text-sm font-mono" {...props}>
+                                  {children}
+                                </code>
+                              );
+                            }
+                            
+                            return <span {...props}>{children}</span>;
+                          },
+                          
+                          a: ({node, children, href, ...props}) => (
+                            <a 
+                              href={href}
+                              className="text-blue-500 hover:text-blue-600 hover:underline cursor-pointer"
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              {...props}
+                            >
+                              {children}
+                            </a>
+                          ),
+                          
+                          p: ({node, children, ...props}) => (
+                            <p className="mb-4 last:mb-0 leading-relaxed" {...props}>{children}</p>
+                          )
+                        }}
+                      >
+                        {msg.text}
+                      </ReactMarkdown>
+                    </div>
                   </div>
                 </div>
               ))}
