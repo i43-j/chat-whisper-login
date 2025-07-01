@@ -217,7 +217,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
                     }`}
                   >
                    
-                    <div className="markdown-content text-sm">
+                    <div className="markdown-content text-sm text-foreground">
                       <ReactMarkdown 
                         remarkPlugins={[]}
                         rehypePlugins={[]}
@@ -228,8 +228,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
                             
                             if (!inline && match) {
                               return (
-                                <pre className="bg-muted border rounded-lg p-4 overflow-x-auto mb-4 last:mb-0">
-                                  <code className={className} {...props}>
+                                <pre className="bg-muted text-foreground border rounded-lg p-4 overflow-x-auto mb-4 last:mb-0">
+                                  <code className={`${className} text-foreground`} {...props}>
                                     {children}
                                   </code>
                                 </pre>
@@ -238,19 +238,19 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
                             
                             if (inline) {
                               return (
-                                <code className="bg-muted px-1 py-0.5 rounded text-sm font-mono" {...props}>
+                                <code className="bg-muted text-foreground px-1 py-0.5 rounded text-sm font-mono" {...props}>
                                   {children}
                                 </code>
                               );
                             }
                             
-                            return <span {...props}>{children}</span>;
+                            return <span className="text-foreground" {...props}>{children}</span>;
                           },
                           
                           a: ({node, children, href, ...props}) => (
                             <a 
                               href={href}
-                              className="text-blue-500 hover:text-blue-600 hover:underline cursor-pointer"
+                              className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline cursor-pointer"
                               target="_blank" 
                               rel="noopener noreferrer" 
                               {...props}
@@ -260,7 +260,39 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
                           ),
                           
                           p: ({node, children, ...props}) => (
-                            <p className="mb-4 last:mb-0 leading-relaxed" {...props}>{children}</p>
+                            <p className="mb-4 last:mb-0 leading-relaxed text-foreground" {...props}>{children}</p>
+                          ),
+
+                          h1: ({node, children, ...props}) => (
+                            <h1 className="text-2xl font-bold mb-4 text-foreground" {...props}>{children}</h1>
+                          ),
+
+                          h2: ({node, children, ...props}) => (
+                            <h2 className="text-xl font-semibold mb-3 text-foreground" {...props}>{children}</h2>
+                          ),
+
+                          h3: ({node, children, ...props}) => (
+                            <h3 className="text-lg font-medium mb-2 text-foreground" {...props}>{children}</h3>
+                          ),
+
+                          strong: ({node, children, ...props}) => (
+                            <strong className="font-semibold text-foreground" {...props}>{children}</strong>
+                          ),
+
+                          em: ({node, children, ...props}) => (
+                            <em className="italic text-foreground" {...props}>{children}</em>
+                          ),
+
+                          ul: ({node, children, ...props}) => (
+                            <ul className="list-disc list-inside mb-4 text-foreground" {...props}>{children}</ul>
+                          ),
+
+                          ol: ({node, children, ...props}) => (
+                            <ol className="list-decimal list-inside mb-4 text-foreground" {...props}>{children}</ol>
+                          ),
+
+                          li: ({node, children, ...props}) => (
+                            <li className="mb-1 text-foreground" {...props}>{children}</li>
                           )
                         }}
                       >
