@@ -216,7 +216,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
                       msg.isUser ? 'user-bubble rounded-br-sm' : 'bot-bubble rounded-bl-sm'
                     }`}
                   >
-                    // Replace your markdown rendering with this debug version
+                   
 <div className="markdown-content text-sm">
   <ReactMarkdown 
     remarkPlugins={[]}
@@ -268,10 +268,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
   </ReactMarkdown>
 </div>
 
-{/* Debug info - remove this after testing */}
-<div className="text-xs text-gray-500 mt-2">
-  Raw text: {JSON.stringify(msg.text).substring(0, 100)}...
-</div>
+
                   </div>
                 </div>
               ))}
