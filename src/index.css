@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -55,6 +54,12 @@ All colors MUST be HSL.
     --bot-bubble: 0 0% 96%;
     --error-bg: 0 84% 95%;
     --error-border: 0 84% 85%;
+
+    /* Markdown-specific variables */
+    --code-bg: 210 40% 96.1%;
+    --code-text: 222.2 84% 4.9%;
+    --blockquote-border: 222.2 47.4% 11.2%;
+    --link-color: 222.2 47.4% 11.2%;
   }
 
   .dark {
@@ -102,6 +107,12 @@ All colors MUST be HSL.
     --bot-bubble: 240 4% 16%;
     --error-bg: 0 84% 12%;
     --error-border: 0 84% 25%;
+
+    /* Dark mode markdown variables */
+    --code-bg: 240 3.7% 15.9%;
+    --code-text: 0 0% 98%;
+    --blockquote-border: 0 0% 98%;
+    --link-color: 224.3 76.3% 48%;
   }
 }
 
@@ -138,6 +149,70 @@ All colors MUST be HSL.
   .error-bg {
     background-color: hsl(var(--error-bg));
     border-color: hsl(var(--error-border));
+  }
+
+  /* Markdown utilities that respect your design system */
+  .markdown-content {
+    @apply text-foreground;
+  }
+  
+  .markdown-content h1,
+  .markdown-content h2,
+  .markdown-content h3,
+  .markdown-content h4,
+  .markdown-content h5,
+  .markdown-content h6 {
+    @apply text-foreground font-semibold mb-4 mt-6 first:mt-0;
+  }
+  
+  .markdown-content h1 { @apply text-2xl; }
+  .markdown-content h2 { @apply text-xl; }
+  .markdown-content h3 { @apply text-lg; }
+  
+  .markdown-content p {
+    @apply text-foreground mb-4 leading-relaxed;
+  }
+  
+  .markdown-content code {
+    background-color: hsl(var(--code-bg));
+    color: hsl(var(--code-text));
+    @apply px-1 py-0.5 rounded text-sm font-mono;
+  }
+  
+  .markdown-content pre {
+    background-color: hsl(var(--code-bg));
+    @apply border rounded-lg p-4 overflow-x-auto mb-4;
+  }
+  
+  .markdown-content pre code {
+    @apply p-0 bg-transparent;
+  }
+  
+  .markdown-content blockquote {
+    border-left: 4px solid hsl(var(--blockquote-border));
+    @apply pl-4 italic text-muted-foreground mb-4;
+  }
+  
+  .markdown-content a {
+    color: hsl(var(--link-color));
+    @apply hover:underline;
+  }
+  
+  .markdown-content ul,
+  .markdown-content ol {
+    @apply mb-4 pl-6;
+  }
+  
+  .markdown-content li {
+    @apply mb-1 text-foreground;
+  }
+  
+  .markdown-content strong {
+    @apply font-semibold text-foreground;
+  }
+  
+  .markdown-content em {
+    @apply italic text-foreground;
   }
 }
 
