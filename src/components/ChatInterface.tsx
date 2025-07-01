@@ -216,25 +216,47 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
                       msg.isUser ? 'user-bubble rounded-br-sm' : 'bot-bubble rounded-bl-sm'
                     }`}
                   >
-                    <div className="markdown-content text-sm">
+                    // Replace your markdown rendering with this debug version
+<div className="markdown-content text-sm">
   <ReactMarkdown 
+    // Add these options to prevent code block issues
+    remarkPlugins={[]}
+    rehypePlugins={[]}
+    skipHtml={false}
     components={{
+      // Force proper code handling
       code: ({node, inline, className, children, ...props}) => {
         const match = /language-(\w+)/.exec(className || '');
-        return !inline && match ? (
-          <pre>
-            <code className={className} {...props}>
+        
+        // Only treat as code block if it has a language class
+        if (!inline && match) {
+          return (
+            <pre className="bg-muted border rounded-lg p-4 overflow-x-auto mb-4">
+              <code className={className} {...props}>
+                {children}
+              </code>
+            </pre>
+          );
+        }
+        
+        // Inline code
+        if (inline) {
+          return (
+            <code className="bg-muted px-1 py-0.5 rounded text-sm font-mono" {...props}>
               {children}
             </code>
-          </pre>
-        ) : (
-          <code {...props}>
-            {children}
-          </code>
-        );
+          );
+        }
+        
+        // Fallback - treat as regular text if no language
+        return <span {...props}>{children}</span>;
       },
-      a: ({node, children, ...props}) => (
+      
+      // Ensure links are properly rendered
+      a: ({node, children, href, ...props}) => (
         <a 
+          href={href}
+          className="text-blue-500 hover:text-blue-600 hover:underline cursor-pointer"
           target="_blank" 
           rel="noopener noreferrer" 
           {...props}
@@ -242,10 +264,21 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
           {children}
         </a>
       ),
+      
+      // Debug: log what's being rendered
+      p: ({node, children, ...props}) => {
+        console.log('Paragraph content:', children);
+        return <p className="mb-4 leading-relaxed" {...props}>{children}</p>;
+      }
     }}
   >
     {msg.text}
   </ReactMarkdown>
+</div>
+
+{/* Debug info - remove this after testing */}
+<div className="text-xs text-gray-500 mt-2">
+  Raw text: {JSON.stringify(msg.text).substring(0, 100)}...
 </div>
                   </div>
                 </div>
