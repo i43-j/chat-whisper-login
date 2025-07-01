@@ -216,48 +216,31 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
                       msg.isUser ? 'user-bubble rounded-br-sm' : 'bot-bubble rounded-bl-sm'
                     }`}
                   >
-                    <div className="prose prose-sm prose-slate dark:prose-invert max-w-none 
-               prose-headings:font-semibold prose-headings:text-foreground
-               prose-p:text-foreground prose-p:leading-relaxed
-               prose-code:text-sm prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded
-               prose-pre:bg-muted prose-pre:border prose-pre:p-4 prose-pre:rounded-lg
-               prose-blockquote:border-l-primary prose-blockquote:border-l-4 prose-blockquote:pl-4
-               prose-strong:text-foreground prose-em:text-foreground
-               prose-ul:text-foreground prose-ol:text-foreground prose-li:text-foreground
-               prose-a:text-primary prose-a:no-underline hover:prose-a:underline">
+                    <div className="markdown-content text-sm">
   <ReactMarkdown 
     components={{
       code: ({node, inline, className, children, ...props}) => {
         const match = /language-(\w+)/.exec(className || '');
         return !inline && match ? (
-          <pre className="bg-muted border rounded-lg p-4 overflow-x-auto">
+          <pre>
             <code className={className} {...props}>
               {children}
             </code>
           </pre>
         ) : (
-          <code className="bg-muted px-1 py-0.5 rounded text-sm font-mono" {...props}>
+          <code {...props}>
             {children}
           </code>
         );
       },
       a: ({node, children, ...props}) => (
         <a 
-          className="text-primary hover:underline" 
           target="_blank" 
           rel="noopener noreferrer" 
           {...props}
         >
           {children}
         </a>
-      ),
-      blockquote: ({node, children, ...props}) => (
-        <blockquote 
-          className="border-l-4 border-l-primary pl-4 italic text-muted-foreground" 
-          {...props}
-        >
-          {children}
-        </blockquote>
       ),
     }}
   >
