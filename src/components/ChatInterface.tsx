@@ -72,21 +72,21 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
   /* ──────────────────── streaming helper ──────────────────── */
   const streamText = (fullText: string, messageId: string) => {
     let currentIndex = 0;
-    const streamingSpeed = 30; // milliseconds between characters
+    const streamingSpeed = 15; // milliseconds between characters (faster)
     
     setStreamingMessageId(messageId);
     
     const streamInterval = setInterval(() => {
       if (currentIndex < fullText.length) {
-        const nextChar = fullText[currentIndex];
+        // Stream multiple characters at once for better performance with markdown
+        const charsToAdd = Math.min(2, fullText.length - currentIndex);
+        currentIndex += charsToAdd;
         
         setMessages(prev => prev.map(msg => 
           msg.id === messageId 
-            ? { ...msg, text: fullText.substring(0, currentIndex + 1), isStreaming: true }
+            ? { ...msg, text: fullText.substring(0, currentIndex), isStreaming: true }
             : msg
         ));
-        
-        currentIndex++;
       } else {
         // Streaming complete
         clearInterval(streamInterval);
@@ -355,9 +355,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
                         {msg.text}
                       </ReactMarkdown>
                       
-                      {/* Show cursor during streaming */}
-                      {msg.isStreaming && (
-                        <span className="inline-block w-2 h-4 bg-current ml-1 animate-pulse" />
+                      {/* Show cursor during streaming - positioned after the text */}
+                      {msg.isStreaming && msg.text && (
+                        <span className="inline-block w-0.5 h-4 bg-current ml-0.5 animate-pulse" 
+                              style={{ backgroundColor: 'currentColor' }} />
                       )}
                     </div>
                   </div>
