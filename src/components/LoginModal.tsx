@@ -2,20 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Send, Sun, Moon, LogOut } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
 
 // Configuration
 const LOGIN_WEBHOOK_URL = 'https://chat-whisper-login.vercel.app/api/chat-login';
-const CHAT_WEBHOOK_URL = 'https://chat-whisper-login.vercel.app/api/chat';
-
-interface Message {
-  id: string;
-  text: string;
-  isUser: boolean;
-  timestamp: Date;
-  isStreaming?: boolean;
-}
 
 // Login Modal Component
 const LoginModal = ({ isOpen, onLoginSuccess }) => {
@@ -153,7 +142,11 @@ const LoginModal = ({ isOpen, onLoginSuccess }) => {
               </div>
             )}
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button 
+              onClick={handleSubmit}
+              className="w-full" 
+              disabled={isLoading}
+            >
               {isLoading ? (
                 <div className="flex items-center justify-center">
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
@@ -169,3 +162,5 @@ const LoginModal = ({ isOpen, onLoginSuccess }) => {
     </div>
   );
 };
+
+export default LoginModal;
