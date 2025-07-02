@@ -1,12 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Send, Sun, Moon, LogOut } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
 // Configuration
-const LOGIN_WEBHOOK_URL = 'https://chat-whisper-login.vercel.app/api/chat-login';
 const CHAT_WEBHOOK_URL = 'https://chat-whisper-login.vercel.app/api/chat';
 
 interface Message {
@@ -304,42 +302,4 @@ const ChatInterface = ({ isLoggedIn, authToken, currentUser, onLogout }) => {
   );
 };
 
-// Main App Component
-export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [authToken, setAuthToken] = useState('');
-  const [currentUser, setCurrentUser] = useState('');
-  const [showLoginModal, setShowLoginModal] = useState(true);
-
-  const handleLoginSuccess = (token, username) => {
-    setAuthToken(token);
-    setCurrentUser(username);
-    setIsLoggedIn(true);
-    setShowLoginModal(false);
-    console.log(`Login successful! User "${username}" is now authenticated.`);
-  };
-
-  const handleLogout = () => {
-    console.log(`User "${currentUser}" logged out. Authentication cleared.`);
-    setIsLoggedIn(false);
-    setAuthToken('');
-    setCurrentUser('');
-    setShowLoginModal(true);
-  };
-
-  return (
-    <div className="min-h-screen">
-      <LoginModal 
-        isOpen={showLoginModal} 
-        onLoginSuccess={handleLoginSuccess} 
-      />
-      
-      <ChatInterface 
-        isLoggedIn={isLoggedIn}
-        authToken={authToken}
-        currentUser={currentUser}
-        onLogout={handleLogout}
-      />
-    </div>
-  );
-}
+export default ChatInterface;
