@@ -63,7 +63,7 @@ const LoginModal = ({ isOpen, onLoginSuccess }) => {
           
           if (token) {
             // Success! Set logged in state
-            onLoginSuccess(token);
+            onLoginSuccess(token, username);
           } else {
             setError('No authentication token received from server');
             setShouldShake(true);
