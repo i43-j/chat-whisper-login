@@ -11,6 +11,7 @@ interface Message {
   text: string;
   isUser: boolean;
   timestamp: Date;
+  isStreaming?: boolean;
 }
 
 interface ChatInterfaceProps {
@@ -29,6 +30,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
   const [isDark, setIsDark] = useState(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('theme');
@@ -40,6 +42,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const streamingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   /* ───────────────────── effects / helpers ────────────────── */
   useEffect(() => {
@@ -51,16 +54,64 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Cleanup streaming interval on unmount
+  useEffect(() => {
+    return () => {
+      if (streamingIntervalRef.current) {
+        clearInterval(streamingIntervalRef.current);
+      }
+    };
+  }, []);
+
   const toggleTheme = () => setIsDark(!isDark);
   const handleSuggestionClick = (s: string) => {
     setInputValue(s);
     inputRef.current?.focus();
   };
 
+  /* ──────────────────── streaming helper ──────────────────── */
+  const streamText = (fullText: string, messageId: string) => {
+    let currentIndex = 0;
+    const streamingSpeed = 30; // milliseconds between characters
+    
+    setStreamingMessageId(messageId);
+    
+    const streamInterval = setInterval(() => {
+      if (currentIndex < fullText.length) {
+        const nextChar = fullText[currentIndex];
+        
+        setMessages(prev => prev.map(msg => 
+          msg.id === messageId 
+            ? { ...msg, text: fullText.substring(0, currentIndex + 1), isStreaming: true }
+            : msg
+        ));
+        
+        currentIndex++;
+      } else {
+        // Streaming complete
+        clearInterval(streamInterval);
+        setStreamingMessageId(null);
+        setMessages(prev => prev.map(msg => 
+          msg.id === messageId 
+            ? { ...msg, isStreaming: false }
+            : msg
+        ));
+      }
+    }, streamingSpeed);
+    
+    streamingIntervalRef.current = streamInterval;
+  };
+
   /* ──────────────────────── submit ────────────────────────── */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputValue.trim() || isLoading) return;
+
+    // Stop any current streaming
+    if (streamingIntervalRef.current) {
+      clearInterval(streamingIntervalRef.current);
+      setStreamingMessageId(null);
+    }
 
     // push user bubble
     const userMsg: Message = {
@@ -132,29 +183,35 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
         botText = `Server error: ${res.status}`;
       }
 
+      // Create bot message with empty text initially
+      const botMsgId = (Date.now() + 1).toString();
       const botMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        text: botText,
+        id: botMsgId,
+        text: '',
         isUser: false,
         timestamp: new Date(),
+        isStreaming: true,
       };
 
+      // Add the empty bot message first
+      setMessages(prev => [...prev, botMsg]);
+      setIsLoading(false);
+
+      // Start streaming the text after a brief delay
       setTimeout(() => {
-        setMessages(prev => [...prev, botMsg]);
-        setIsLoading(false);
+        streamText(botText, botMsgId);
       }, 400);
+
     } catch (err) {
       console.error('Chat request error:', err);
       setIsLoading(false);
-      setMessages(prev => [
-        ...prev,
-        {
-          id: (Date.now() + 1).toString(),
-          text: `Connection error: ${err instanceof Error ? err.message : 'Unknown error'}`,
-          isUser: false,
-          timestamp: new Date(),
-        },
-      ]);
+      const errorMsg = {
+        id: (Date.now() + 1).toString(),
+        text: `Connection error: ${err instanceof Error ? err.message : 'Unknown error'}`,
+        isUser: false,
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, errorMsg]);
     }
   };
 
@@ -216,7 +273,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
                       msg.isUser ? 'user-bubble rounded-br-sm' : 'bot-bubble rounded-bl-sm'
                     }`}
                   >
-                   
                     <div className="markdown-content text-sm text-foreground">
                       <ReactMarkdown 
                         remarkPlugins={[]}
@@ -298,6 +354,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
                       >
                         {msg.text}
                       </ReactMarkdown>
+                      
+                      {/* Show cursor during streaming */}
+                      {msg.isStreaming && (
+                        <span className="inline-block w-2 h-4 bg-current ml-1 animate-pulse" />
+                      )}
                     </div>
                   </div>
                 </div>
@@ -332,14 +393,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
                 onKeyPress={handleKeyPress}
                 placeholder="Send a message…"
                 className="resize-none rounded-2xl"
-                disabled={isLoading}
+                disabled={isLoading || streamingMessageId !== null}
               />
             </div>
             <Button
               type="submit"
               size="sm"
               className="rounded-full flex-shrink-0 mb-2"
-              disabled={!inputValue.trim() || isLoading}
+              disabled={!inputValue.trim() || isLoading || streamingMessageId !== null}
             >
               <Send className="h-4 w-4" />
             </Button>
