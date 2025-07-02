@@ -2,29 +2,31 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Send, Sun, Moon, LogOut } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 
-// Configuration - webhook URL from environment variables
+// Configuration
 const LOGIN_WEBHOOK_URL = 'https://chat-whisper-login.vercel.app/api/chat-login';
+const CHAT_WEBHOOK_URL = 'https://chat-whisper-login.vercel.app/api/chat';
 
-interface LoginModalProps {
-  isOpen: boolean;
-  onLoginSuccess: (token: string) => void;
+interface Message {
+  id: string;
+  text: string;
+  isUser: boolean;
+  timestamp: Date;
+  isStreaming?: boolean;
 }
 
-export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onLoginSuccess }) => {
+// Login Modal Component
+const LoginModal = ({ isOpen, onLoginSuccess }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [shouldShake, setShouldShake] = useState(false);
   
-  const usernameRef = useRef<HTMLInputElement>(null);
-  const passwordRef = useRef<HTMLInputElement>(null);
-  const submitButtonRef = useRef<HTMLButtonElement>(null);
-  const modalRef = useRef<HTMLDivElement>(null);
-
-  // Focus trap elements
-  const focusableElements = [usernameRef, passwordRef, submitButtonRef];
+  const usernameRef = useRef(null);
+  const passwordRef = useRef(null);
 
   useEffect(() => {
     if (isOpen && usernameRef.current) {
@@ -32,31 +34,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onLoginSuccess }
     }
   }, [isOpen]);
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleSubmit(e as any);
-    }
-  };
-
-  const handleTabKey = (e: React.KeyboardEvent) => {
-    if (e.key === 'Tab') {
-      const currentIndex = focusableElements.findIndex(ref => ref.current === document.activeElement);
-      
-      if (e.shiftKey) {
-        // Shift + Tab (backwards)
-        const prevIndex = currentIndex <= 0 ? focusableElements.length - 1 : currentIndex - 1;
-        focusableElements[prevIndex].current?.focus();
-      } else {
-        // Tab (forwards)
-        const nextIndex = currentIndex >= focusableElements.length - 1 ? 0 : currentIndex + 1;
-        focusableElements[nextIndex].current?.focus();
-      }
-      e.preventDefault();
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!username.trim() || !password.trim()) {
@@ -68,81 +46,46 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onLoginSuccess }
     setError('');
 
     try {
-      console.log('=== LOGIN REQUEST DEBUG ===');
-      console.log('Login URL:', LOGIN_WEBHOOK_URL);
-      console.log('Username:', username);
-      
       const response = await fetch(LOGIN_WEBHOOK_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
       });
 
-      console.log('Response status:', response.status);
-      console.log('Response ok:', response.ok);
-      
-      const responseText = await response.text();
-      console.log('Raw response text:', responseText);
-      console.log('Response length:', responseText.length);
-      
       if (response.status === 200) {
+        const responseText = await response.text();
+        
         try {
           const data = JSON.parse(responseText);
-          console.log('Parsed login data:', data);
-          console.log('Data structure:', Object.keys(data));
           
-          // Handle n8n response format - check multiple possible token locations
-          let token = null;
-          
-          if (data.token) {
-            token = data.token;
-            console.log('Token found in data.token:', token);
-          } else if (data.body?.token) {
-            token = data.body.token;
-            console.log('Token found in data.body.token:', token);
-          } else if (data.response) {
-            token = data.response;
-            console.log('Token found in data.response:', token);
-          } else if (data.body?.response) {
-            token = data.body.response;
-            console.log('Token found in data.body.response:', token);
-          }
+          // Extract token from various possible locations
+          let token = data.token || data.body?.token || data.response || data.body?.response;
           
           if (token) {
-            localStorage.setItem('chatSessionToken', token);
+            // Success! Set logged in state
             onLoginSuccess(token);
-            console.log('Login successful! Token stored.');
           } else {
-            console.error('No token found in response!');
-            console.log('Full response structure:', JSON.stringify(data, null, 2));
             setError('No authentication token received from server');
             setShouldShake(true);
             setTimeout(() => setShouldShake(false), 500);
           }
           
         } catch (parseError) {
-          console.error('JSON parse error:', parseError);
-          console.log('Response was not valid JSON:', responseText);
           setError('Invalid response format from server');
           setShouldShake(true);
           setTimeout(() => setShouldShake(false), 500);
         }
       } else if (response.status === 401) {
-        console.log('Login failed - 401 Unauthorized');
         setError('Invalid username or password');
         setShouldShake(true);
         setTimeout(() => setShouldShake(false), 500);
       } else {
-        console.log('Unexpected status code:', response.status);
         setError(`Server returned status: ${response.status}`);
         setShouldShake(true);
         setTimeout(() => setShouldShake(false), 500);
       }
     } catch (error) {
-      console.error('Network/request error:', error);
-      setError(`Connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setError(`Connection failed: ${error.message}`);
       setShouldShake(true);
       setTimeout(() => setShouldShake(false), 500);
     } finally {
@@ -153,32 +96,17 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onLoginSuccess }
   if (!isOpen) return null;
 
   return (
-    <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="login-title"
-    >
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
       
-      {/* Modal */}
-      <div 
-        ref={modalRef}
-        className={`relative w-full max-w-md bg-card border rounded-xl shadow-2xl animate-scale-in ${shouldShake ? 'animate-shake' : ''}`}
-        onKeyDown={handleTabKey}
-      >
+      <div className={`relative w-full max-w-md bg-white dark:bg-gray-800 border rounded-xl shadow-2xl ${shouldShake ? 'animate-pulse' : ''}`}>
         <div className="p-8">
           <div className="text-center mb-8">
-            <h1 id="login-title" className="text-2xl font-bold mb-2">
-              Welcome Back
-            </h1>
-            <p className="text-muted-foreground">
-              Please sign in to continue
-            </p>
+            <h1 className="text-2xl font-bold mb-2">Welcome Back</h1>
+            <p className="text-gray-600 dark:text-gray-400">Please sign in to continue</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
               <Input
@@ -187,9 +115,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onLoginSuccess }
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                onKeyPress={handleKeyPress}
                 placeholder="Enter your username"
-                className="w-full"
                 disabled={isLoading}
                 required
               />
@@ -203,30 +129,19 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onLoginSuccess }
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                onKeyPress={handleKeyPress}
                 placeholder="Enter your password"
-                className="w-full"
                 disabled={isLoading}
                 required
               />
             </div>
 
             {error && (
-              <div 
-                className="p-3 text-sm rounded-lg error-bg animate-fade-in" 
-                role="alert"
-                aria-live="polite"
-              >
+              <div className="p-3 text-sm bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg">
                 {error}
               </div>
             )}
 
-            <Button
-              ref={submitButtonRef}
-              type="submit"
-              className="w-full"
-              disabled={isLoading}
-            >
+            <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? (
                 <div className="flex items-center justify-center">
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
@@ -236,7 +151,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onLoginSuccess }
                 'Sign In'
               )}
             </Button>
-          </form>
+          </div>
         </div>
       </div>
     </div>
